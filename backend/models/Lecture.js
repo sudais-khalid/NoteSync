@@ -26,10 +26,20 @@ const lectureSchema = new mongoose.Schema({
     enum: ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Engineering', 'Business', 'Arts', 'Languages', 'Other'],
     default: 'Other'
   },
+
+  // Raw verbatim speech-to-text output (unprocessed)
+  rawTranscript: {
+    type: String,
+    default: ''
+  },
+
+  // Cleaned / final transcript used for summarization
   transcript: {
     type: String,
     required: [true, 'Transcript is required']
   },
+
+  // AI-generated notes
   summary: {
     type: String,
     required: [true, 'Summary is required']
@@ -43,6 +53,28 @@ const lectureSchema = new mongoose.Schema({
   examTopics: [{
     type: String
   }],
+
+  // NLP-derived fields
+  sentiment: {
+    type: String,
+    enum: ['positive', 'neutral', 'critical', 'mixed'],
+    default: 'neutral'
+  },
+  entities: [{
+    type: String
+  }],
+  topics: [{
+    type: String
+  }],
+  readabilityScore: {
+    type: Number,
+    default: null
+  },
+  flashcards: [{
+    question: { type: String },
+    answer: { type: String }
+  }],
+
   duration: {
     type: Number, // Duration in seconds
     default: 0

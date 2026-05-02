@@ -1,28 +1,28 @@
-Additional custom styles for App component
+/* Additional custom styles for App component */
 
 .gradient-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #d97757 0%, #c4673f 100%);
 }
 
 .card-shadow {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.05);
 }
 
 .card-shadow:hover {
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  transition: box-shadow 0.25s ease;
 }
 
 .btn-primary {
-  @apply bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105;
+  @apply bg-claude-orange hover:bg-claude-orange-dark text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02];
 }
 
 .btn-secondary {
-  @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition duration-200;
+  @apply bg-claude-bg hover:bg-claude-border text-claude-dark font-semibold py-3 px-6 rounded-lg border border-claude-border transition duration-200;
 }
 
 .input-field {
-  @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition duration-200;
+  @apply w-full px-4 py-3 border border-claude-border rounded-lg focus:border-claude-orange focus:ring-2 focus:ring-claude-orange-light outline-none transition duration-200 bg-white text-claude-dark placeholder-claude-subtle;
 }
 
 /* Recording button animation */
@@ -31,12 +31,8 @@ Additional custom styles for App component
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* Line clamp utility */

@@ -3,7 +3,7 @@ const summarizationService = require('../services/summarizationService');
 
 const lectureController = {
   /**
-   * @desc    Summarize lecture transcript
+   * @desc    Summarize lecture transcript with full NLP analysis
    * @route   POST /api/summarize
    * @access  Public
    */
@@ -11,7 +11,6 @@ const lectureController = {
     try {
       const { transcript, subject } = req.body;
 
-      // Validation
       if (!transcript || transcript.trim().length === 0) {
         return res.status(400).json({
           success: false,
@@ -19,7 +18,6 @@ const lectureController = {
         });
       }
 
-      // Check if Gemini API is configured
       if (!summarizationService.isConfigured()) {
         return res.status(500).json({
           success: false,
@@ -27,12 +25,11 @@ const lectureController = {
         });
       }
 
-      console.log(`Summarizing transcript (${transcript.length} characters)...`);
+      console.log(`Summarizing transcript (${transcript.length} characters) with NLP analysis...`);
 
-      // Summarize using Gemini AI
       const summary = await summarizationService.summarizeLecture(transcript, subject);
 
-      console.log('Summarization successful');
+      console.log('NLP Summarization successful');
 
       res.status(200).json({
         success: true,
@@ -49,15 +46,31 @@ const lectureController = {
   },
 
   /**
-   * @desc    Create new lecture
+   * @desc    Create new lecture (stores both raw transcript + AI notes)
    * @route   POST /api/lectures
    * @access  Private
    */
   createLecture: async (req, res) => {
     try {
-      const { title, subject, transcript, summary, keyPoints, definitions, examTopics, duration, category, tags } = req.body;
+      const {
+        title,
+        subject,
+        rawTranscript,
+        transcript,
+        summary,
+        keyPoints,
+        definitions,
+        examTopics,
+        sentiment,
+        entities,
+        topics,
+        readabilityScore,
+        flashcards,
+        duration,
+        category,
+        tags
+      } = req.body;
 
-      // Validation
       if (!title || !transcript || !summary) {
         return res.status(400).json({
           success: false,
@@ -65,16 +78,21 @@ const lectureController = {
         });
       }
 
-      // Create lecture with user reference
       const lecture = await Lecture.create({
         user: req.user.id,
         title: title.trim(),
         subject: subject?.trim() || '',
+        rawTranscript: rawTranscript || transcript, // fallback to transcript if raw not provided
         transcript,
         summary,
         keyPoints: keyPoints || [],
         definitions: definitions || [],
         examTopics: examTopics || [],
+        sentiment: sentiment || 'neutral',
+        entities: entities || [],
+        topics: topics || [],
+        readabilityScore: readabilityScore || null,
+        flashcards: flashcards || [],
         duration: duration || 0,
         category: category || 'Other',
         tags: tags || []
@@ -104,21 +122,16 @@ const lectureController = {
   getAllLectures: async (req, res) => {
     try {
       const { category, tag } = req.query;
-      
-      // Build filter - only get lectures for current user
+
       let filter = { user: req.user.id };
-      if (category) {
-        filter.category = category;
-      }
-      if (tag) {
-        filter.tags = tag;
-      }
+      if (category) filter.category = category;
+      if (tag) filter.tags = tag;
 
       const lectures = await Lecture.find(filter)
         .sort({ date: -1 })
         .select('-__v');
 
-      console.log(`Retrieved ${lectures.length} lectures for user: ${req.user.email}${category ? ` (category: ${category})` : ''}${tag ? ` (tag: ${tag})` : ''}`);
+      console.log(`Retrieved ${lectures.length} lectures for user: ${req.user.email}`);
 
       res.status(200).json({
         success: true,
@@ -142,9 +155,9 @@ const lectureController = {
    */
   getLecture: async (req, res) => {
     try {
-      const lecture = await Lecture.findOne({ 
+      const lecture = await Lecture.findOne({
         _id: req.params.id,
-        user: req.user.id // Only get lecture if it belongs to the user
+        user: req.user.id
       });
 
       if (!lecture) {
@@ -179,7 +192,7 @@ const lectureController = {
     try {
       let lecture = await Lecture.findOne({
         _id: req.params.id,
-        user: req.user.id // Only update if user owns the lecture
+        user: req.user.id
       });
 
       if (!lecture) {
@@ -192,10 +205,7 @@ const lectureController = {
       lecture = await Lecture.findByIdAndUpdate(
         req.params.id,
         req.body,
-        {
-          new: true,
-          runValidators: true
-        }
+        { new: true, runValidators: true }
       );
 
       console.log(`Updated lecture: ${lecture.title} (User: ${req.user.email})`);
@@ -223,7 +233,7 @@ const lectureController = {
     try {
       const lecture = await Lecture.findOne({
         _id: req.params.id,
-        user: req.user.id // Only delete if user owns the lecture
+        user: req.user.id
       });
 
       if (!lecture) {
@@ -259,16 +269,11 @@ const lectureController = {
    */
   getCategoriesAndTags: async (req, res) => {
     try {
-      // Filter by current user only
       const userFilter = { user: req.user.id };
 
-      // Get unique categories for current user
       const categories = await Lecture.distinct('category', userFilter);
-      
-      // Get all tags for current user
       const allTags = await Lecture.distinct('tags', userFilter);
-      
-      // Count lectures per category for current user
+
       const categoryStats = await Promise.all(
         categories.map(async (cat) => ({
           name: cat,
@@ -276,7 +281,6 @@ const lectureController = {
         }))
       );
 
-      // Count lectures per tag for current user
       const tagStats = await Promise.all(
         allTags.map(async (tag) => ({
           name: tag,

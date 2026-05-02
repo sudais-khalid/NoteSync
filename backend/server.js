@@ -94,9 +94,7 @@ app.listen(PORT, () => {
   console.log('================================\n');
 });
 
-// Handle unhandled promise rejections
+// Handle unhandled promise rejections gracefully
 process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit
-  server.close(() => process.exit(1));
+  console.error('Unhandled Promise Rejection:', err.message || err);
 });

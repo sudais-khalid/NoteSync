@@ -1,181 +1,103 @@
 import React, { useState } from 'react';
 import { authAPI } from '../services/api';
 
+const EyeIcon = ({ open }) => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {open ? (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    ) : (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    )}
+  </svg>
+);
+
 const Register = ({ onRegister, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    university: '',
-    fieldOfStudy: '',
-    educationLevel: ''
+    fullName: '', email: '', password: '', confirmPassword: '',
+    university: '', fieldOfStudy: '', educationLevel: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-
+    if (formData.password !== formData.confirmPassword) { setError('Passwords do not match'); return; }
+    if (formData.password.length < 8) { setError('Password must be at least 8 characters'); return; }
     setIsLoading(true);
-
     try {
       const { confirmPassword, ...registerData } = formData;
       const response = await authAPI.register(registerData);
       onRegister(response.user);
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputClass = "w-full px-3.5 py-2.5 border border-claude-border rounded-lg text-sm text-claude-dark placeholder-claude-subtle focus:outline-none focus:ring-2 focus:ring-claude-orange focus:border-claude-orange transition";
+  const labelClass = "block text-sm font-medium text-claude-dark mb-1.5";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full space-y-8 bg-white rounded-2xl shadow-2xl p-8">
-        {/* Logo/Header */}
-        <div className="text-center">
-          <div className="text-6xl mb-4"></div>
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-2">
-          Join NoteSync!
-          </h2>
-          <p className="text-gray-600">Create your account and start learning smarter</p>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <span className="text-red-500 text-xl"></span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-claude-bg px-4 py-10">
+      <div className="w-full max-w-2xl">
+        <div className="bg-white rounded-2xl border border-claude-border shadow-claude-lg p-8">
+          {/* Header */}
+          <div className="text-center mb-7">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-claude-orange flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
             </div>
+            <h2 className="text-2xl font-bold text-claude-dark">Create your account</h2>
+            <p className="text-claude-muted text-sm mt-1">Start learning smarter with NoteSync</p>
           </div>
-        )}
 
-        {/* Register Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
-              Full Name *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="John Doe"
-                />
+          {error && (
+            <div className="mb-5 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Full Name */}
+              <div>
+                <label htmlFor="reg-fullName" className={labelClass}>Full name *</label>
+                <input id="reg-fullName" name="fullName" type="text" required value={formData.fullName}
+                  onChange={handleChange} placeholder="John Doe" className={inputClass} />
               </div>
-            </div>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-              Email Address *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="john@example.com"
-                />
+              {/* Email */}
+              <div>
+                <label htmlFor="reg-email" className={labelClass}>Email address *</label>
+                <input id="reg-email" name="email" type="email" autoComplete="email" required
+                  value={formData.email} onChange={handleChange} placeholder="you@example.com" className={inputClass} />
               </div>
-            </div>
 
-            {/* University */}
-            <div>
-              <label htmlFor="university" className="block text-sm font-semibold text-gray-700 mb-2">
-              University *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="university"
-                  name="university"
-                  type="text"
-                  required
-                  value={formData.university}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="University of XYZ"
-                />
+              {/* University */}
+              <div>
+                <label htmlFor="reg-university" className={labelClass}>University *</label>
+                <input id="reg-university" name="university" type="text" required value={formData.university}
+                  onChange={handleChange} placeholder="University of XYZ" className={inputClass} />
               </div>
-            </div>
 
-            {/* Field of Study */}
-            <div>
-              <label htmlFor="fieldOfStudy" className="block text-sm font-semibold text-gray-700 mb-2">
-              Field of Study *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="fieldOfStudy"
-                  name="fieldOfStudy"
-                  type="text"
-                  required
-                  value={formData.fieldOfStudy}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="Computer Science"
-                />
+              {/* Field of Study */}
+              <div>
+                <label htmlFor="reg-fieldOfStudy" className={labelClass}>Field of study *</label>
+                <input id="reg-fieldOfStudy" name="fieldOfStudy" type="text" required value={formData.fieldOfStudy}
+                  onChange={handleChange} placeholder="Computer Science" className={inputClass} />
               </div>
-            </div>
 
-            {/* Education Level */}
-            <div className="md:col-span-2">
-              <label htmlFor="educationLevel" className="block text-sm font-semibold text-gray-700 mb-2">
-              Education Level *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <select
-                  id="educationLevel"
-                  name="educationLevel"
-                  required
-                  value={formData.educationLevel}
+              {/* Education Level */}
+              <div className="md:col-span-2">
+                <label htmlFor="reg-educationLevel" className={labelClass}>Education level *</label>
+                <select id="reg-educationLevel" name="educationLevel" required value={formData.educationLevel}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 cursor-pointer"
-                >
-                  <option value="">Select Education Level</option>
+                  className="w-full px-3.5 py-2.5 border border-claude-border rounded-lg text-sm text-claude-dark focus:outline-none focus:ring-2 focus:ring-claude-orange focus:border-claude-orange transition cursor-pointer bg-white">
+                  <option value="">Select level</option>
                   <option value="High School">High School</option>
                   <option value="Bachelor's">Bachelor's Degree</option>
                   <option value="Master's">Master's Degree</option>
@@ -183,109 +105,61 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
                   <option value="Other">Other</option>
                 </select>
               </div>
-            </div>
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              Password *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-12 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="Min. 8 characters"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </button>
+              {/* Password */}
+              <div>
+                <label htmlFor="reg-password" className={labelClass}>Password *</label>
+                <div className="relative">
+                  <input id="reg-password" name="password" type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password" required value={formData.password}
+                    onChange={handleChange} placeholder="Min. 8 characters"
+                    className={inputClass + ' pr-10'} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-claude-subtle hover:text-claude-muted">
+                    <EyeIcon open={showPassword} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label htmlFor="reg-confirmPassword" className={labelClass}>Confirm password *</label>
+                <input id="reg-confirmPassword" name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'} autoComplete="new-password"
+                  required value={formData.confirmPassword} onChange={handleChange}
+                  placeholder="Re-enter password" className={inputClass} />
               </div>
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-              Confirm Password *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-xl"></span>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-12 pr-3 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                  placeholder="Re-enter password"
-                />
-              </div>
-            </div>
-          </div>
+            {/* Hint */}
+            <p className="text-xs text-claude-muted bg-claude-bg border border-claude-border rounded-lg px-3 py-2">
+              Password must be at least 8 characters and should be unique and secure.
+            </p>
 
-          {/* Password Requirements */}
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <p className="text-sm text-blue-700 font-semibold mb-2">Password Requirements:</p>
-            <ul className="text-xs text-blue-600 space-y-1">
-              <li>✓ At least 8 characters long</li>
-              <li>✓ Should be unique and secure</li>
-            </ul>
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-bold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:scale-105 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
-            >
+            <button type="submit" disabled={isLoading}
+              className="w-full bg-claude-orange hover:bg-claude-orange-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
               {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                Creating Account...
-                </span>
-              ) : (
-                <span>Create Account</span>
-              )}
+                  Creating account...
+                </>
+              ) : 'Create account'}
+            </button>
+          </form>
+
+          <div className="mt-5 text-center text-sm text-claude-muted">
+            Already have an account?{' '}
+            <button onClick={onSwitchToLogin} className="font-semibold text-claude-orange hover:text-claude-orange-dark transition">
+              Sign in
             </button>
           </div>
-
-          {/* Login Link */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={onSwitchToLogin}
-                className="font-semibold text-indigo-600 hover:text-indigo-500 transition duration-200"
-              >
-              Sign In
-              </button>
-            </p>
-          </div>
-        </form>
-
-        {/* Footer */}
-        <div className="text-center pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500">
-          By creating an account, you agree to our Terms & Privacy Policy
-          </p>
         </div>
+        <p className="text-center text-xs text-claude-subtle mt-5">
+          By creating an account you agree to our Terms &amp; Privacy Policy &mdash; &copy; 2026
+        </p>
       </div>
     </div>
   );
