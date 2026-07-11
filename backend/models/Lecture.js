@@ -44,6 +44,12 @@ const lectureSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Summary is required']
   },
+  // Detailed, sectioned study notes (topic sections composed by the NLP
+  // pipeline; readable prose a student can study from directly)
+  detailedNotes: [{
+    heading: { type: String },
+    body: { type: String }
+  }],
   keyPoints: [{
     type: String
   }],
@@ -74,6 +80,27 @@ const lectureSchema = new mongoose.Schema({
     question: { type: String },
     answer: { type: String }
   }],
+
+  // Character-offset spans into `transcript`, for inline highlighting in the
+  // annotated-manuscript UI. Kept alongside the plain `entities`/`topics`
+  // string arrays above (which remain the simple version used for tag/stat filtering).
+  entitySpans: [{
+    text: { type: String },
+    type: { type: String },
+    start: { type: Number },
+    end: { type: Number }
+  }],
+  keyTermSpans: [{
+    text: { type: String },
+    score: { type: Number },
+    start: { type: Number },
+    end: { type: Number }
+  }],
+  enrichment: {
+    type: String,
+    enum: ['gemini', 'none'],
+    default: 'none'
+  },
 
   duration: {
     type: Number, // Duration in seconds

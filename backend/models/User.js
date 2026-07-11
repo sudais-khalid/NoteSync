@@ -83,7 +83,7 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Index for faster email lookups
-userSchema.index({ email: 1 });
+// NOTE: no explicit email index here — `unique: true` on the email field
+// already creates one; declaring both triggers a Mongoose duplicate-index warning.
 
 module.exports = mongoose.model('User', userSchema);

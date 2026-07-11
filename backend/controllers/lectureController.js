@@ -1,11 +1,12 @@
 const Lecture = require('../models/Lecture');
-const summarizationService = require('../services/summarizationService');
+const { generateLectureNotes } = require('../services/nlp/generateLectureNotes');
 
 const lectureController = {
   /**
-   * @desc    Summarize lecture transcript with full NLP analysis
+   * @desc    Run the classical NLP pipeline (+ optional Gemini enrichment)
+   *          over a lecture transcript
    * @route   POST /api/summarize
-   * @access  Public
+   * @access  Private
    */
   summarize: async (req, res) => {
     try {
@@ -18,22 +19,16 @@ const lectureController = {
         });
       }
 
-      if (!summarizationService.isConfigured()) {
-        return res.status(500).json({
-          success: false,
-          error: 'Gemini API key is not configured. Please add GEMINI_API_KEY to .env file.'
-        });
-      }
+      console.log(`Running NLP pipeline on transcript (${transcript.length} characters)...`);
 
-      console.log(`Summarizing transcript (${transcript.length} characters) with NLP analysis...`);
+      const { annotations, ...notes } = await generateLectureNotes(transcript, subject);
 
-      const summary = await summarizationService.summarizeLecture(transcript, subject);
-
-      console.log('NLP Summarization successful');
+      console.log(`NLP pipeline complete (enrichment: ${notes.enrichment})`);
 
       res.status(200).json({
         success: true,
-        ...summary
+        ...notes,
+        annotations
       });
 
     } catch (error) {
@@ -58,6 +53,7 @@ const lectureController = {
         rawTranscript,
         transcript,
         summary,
+        detailedNotes,
         keyPoints,
         definitions,
         examTopics,
@@ -66,6 +62,9 @@ const lectureController = {
         topics,
         readabilityScore,
         flashcards,
+        entitySpans,
+        keyTermSpans,
+        enrichment,
         duration,
         category,
         tags
@@ -85,6 +84,7 @@ const lectureController = {
         rawTranscript: rawTranscript || transcript, // fallback to transcript if raw not provided
         transcript,
         summary,
+        detailedNotes: detailedNotes || [],
         keyPoints: keyPoints || [],
         definitions: definitions || [],
         examTopics: examTopics || [],
@@ -93,6 +93,9 @@ const lectureController = {
         topics: topics || [],
         readabilityScore: readabilityScore || null,
         flashcards: flashcards || [],
+        entitySpans: entitySpans || [],
+        keyTermSpans: keyTermSpans || [],
+        enrichment: enrichment || 'none',
         duration: duration || 0,
         category: category || 'Other',
         tags: tags || []

@@ -1,86 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-bg: #f8f7f4;
-  --color-surface: #ffffff;
-  --color-border: #e5e3de;
-  --color-orange: #d97757;
-  --color-orange-dark: #c4673f;
-  --color-orange-light: #fdf0eb;
-  --color-dark: #1a1a1a;
-  --color-muted: #6b6b6b;
-  --color-subtle: #9a9a9a;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--color-bg);
-  color: var(--color-dark);
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-muted);
-}
-
-/* Recording pulse animation */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    opacity: 1;
+@layer base {
+  html {
+    @apply bg-paper text-ink;
   }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
+
+  body {
+    @apply font-sans antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+  }
+
+  ::selection {
+    @apply bg-amber-light text-ink;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.teal.DEFAULT');
+    outline-offset: 2px;
   }
 }
 
-.recording-pulse::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: rgba(217, 119, 87, 0.3);
-  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+@layer utilities {
+  .label-mono {
+    @apply font-mono text-xs uppercase tracking-wider text-ink-muted;
+  }
 
-/* Fade-in animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
+  /* Urdu glyphs render via per-glyph font fallback ('Noto Nastaliq Urdu' is
+     appended to the font stacks in tailwind.config.js). Nastaliq script is
+     tall, so RTL blocks get a looser line height to prevent clipping. */
+  .urdu-capable:dir(rtl) {
+    line-height: 2.2;
+  }
 }
