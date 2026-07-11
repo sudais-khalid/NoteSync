@@ -1,221 +1,148 @@
-# 📚 NoteSync
+# NoteSync
 
-> AI-Powered Lecture Note-Taking Application for Students
+> Record a lecture, get an NLP-annotated transcript and detailed study notes. Built as an NLP semester project.
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![Node.js](https://img.shields.io/badge/Node.js-v16+-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-v18-blue.svg)](https://reactjs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/)
+[![CI/CD](https://github.com/sudais-khalid/NoteSync/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sudais-khalid/NoteSync/actions/workflows/ci-cd.yml)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.txt)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
 
-NoteSync transforms your lectures into smart, organized notes using AI. Perfect for Pakistani students with support for Urdu-English code-mixing.
+NoteSync transcribes lectures live in the browser (English, Urdu, or code-mixed), runs the transcript through a **classical NLP pipeline built from scratch in Node.js**, and presents the result as an annotated manuscript: the raw transcript with entities and key terms highlighted inline, alongside sectioned study notes, definitions, exam topics, and flashcards.
 
-![NoteSync Demo](https://via.placeholder.com/800x400?text=NoteSync+Demo)
+The NLP analysis is **not just an LLM API call**: every core technique is implemented with classical/statistical methods, with Google Gemini available only as an optional polish pass on top.
 
-## ✨ Features
+## The NLP pipeline
 
-### 🎙️ Smart Recording
-- **Real-time Speech-to-Text** - Live transcription as you speak
-- **Multi-language Support** - English, Urdu, and code-mixing
-- **Pause & Resume** - Full control over your recording
-- **Bluetooth Mic Support** - Works with wireless microphones
+Each stage lives in its own module under [`backend/services/nlp/`](backend/services/nlp/):
 
-### 🤖 AI-Powered Intelligence
-- **Smart Summarization** - AI extracts key concepts using Google Gemini
-- **Key Points Extraction** - Automatically identifies important topics
-- **Definition Detection** - Highlights key terms and definitions
-- **Exam Focus** - Filters out casual conversation, keeps study material
+| Stage | Technique | Module |
+| --- | --- | --- |
+| Tokenization & sentence segmentation | wink-nlp with offset reconstruction; Urdu sentence marks (`۔ ؟`) normalized in a same-length copy so highlight offsets never desync | `tokenizer.js` |
+| POS tagging | wink-nlp English model (sample exposed via API) | `posTagger.js` |
+| Term & sentence salience | TF-IDF over sentences with a **bilingual tokenizer** (Latin + Urdu script) and English + Urdu + Roman-Urdu stopword filtering | `tfidf.js`, `urduSupport.js` |
+| Summarization | Extractive: top-K TF-IDF-ranked sentences, restored to document order | `summarizer.js` |
+| Named entity recognition | wink-nlp statistical NER + compromise supplemental pass, deduplicated, with character offsets for inline highlighting | `nerExtractor.js` |
+| Definition extraction | Rule-based patterns (`X is/means/refers to Y`) with pronoun-subject filtering | `definitionExtractor.js` |
+| Sentiment | AFINN lexicon scoring (wink-sentiment) mapped to positive/neutral/critical/mixed | `sentimentAnalyzer.js` |
+| Readability | Flesch-Kincaid grade + Reading Ease, implemented by hand (syllable-cluster heuristic) | `readability.js` |
+| Study-note composition | Topic-seeded sentence grouping into readable sections (Overview → topic sections → definitions → exam prep) | `notesComposer.js` |
+| Flashcards | Template-based Q/A generation from definitions and key sentences | `flashcardGenerator.js` |
+| Optional LLM enrichment | Gemini polishes summary/notes/flashcards **only**; entities, sentiment, topics, readability stay classical. Falls back cleanly if unconfigured or failing | `geminiEnrichment.js` |
 
-### 🏷️ Organization & Management
-- **Categories** - Organize by subject (Computer Science, Mathematics, etc.)
-- **Custom Tags** - Add your own tags for easy filtering
-- **Advanced Search** - Find lectures instantly
-- **Filter System** - Combine search, categories, and tags
+**Urdu / code-mixed support**: script detection, an embedded Urdu + Roman-Urdu stopword list, offset-safe sentence segmentation, and RTL rendering with Noto Nastaliq Urdu in the UI. (Known limitation: NER and sentiment are English-trained, so Urdu-only passages degrade. Documented as future work.)
 
-### 🔐 Secure Authentication
-- **User Accounts** - Secure JWT-based authentication
-- **Profile Management** - Track your university, major, and education level
-- **Private Lectures** - Only you can see your notes
-- **Data Security** - Encrypted passwords with bcrypt
+## Features
 
-## 🚀 Tech Stack
+- **Live transcription** via the Web Speech API: free, in-browser, with a language selector (English / اردو / Mixed) and automatic restart so long lectures record through pauses.
+- **Annotated manuscript view**: the raw transcript with teal dotted underlines (entities) and amber highlights (key terms); clicking a highlight opens a margin note showing what the pipeline detected.
+- **Detailed study notes**: sectioned, readable prose composed from the transcript, not just bullet points.
+- **Flashcards** styled as physical index cards, plus per-lecture summary, key points, definitions, exam topics, topic clusters, sentiment, and readability grade.
+- **Lecture library** with category/tag filtering, backed by JWT-authenticated per-user storage.
 
-**Frontend:**
-- React 18
-- Tailwind CSS
-- Web Speech API
-- Axios
+## Tech stack
 
-**Backend:**
-- Node.js + Express
-- MongoDB Atlas
-- Mongoose ODM
-- JWT Authentication
-- Bcrypt
+**Backend**: Node.js 20, Express, MongoDB/Mongoose, JWT + bcrypt auth. NLP: wink-nlp, natural (TF-IDF), compromise, wink-sentiment.
+**Frontend**: React 18 (CRA), Tailwind CSS, React Router 7, Web Speech API.
+**Testing**: Jest + Supertest + mongodb-memory-server (backend, 66 tests), React Testing Library (frontend, 15 tests).
+**Ops**: Docker (multi-stage, non-root), docker-compose, GitHub Actions CI/CD publishing images to GHCR.
 
-**AI & APIs:**
-- Google Gemini 2.0 Flash
-- Web Speech API (Browser)
-
-## 💻 Installation
+## Getting started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB Atlas account (free tier)
-- Google Gemini API key (free)
 
-### 1. Clone Repository
+- Node.js 20+
+- Either Docker (easiest) or a MongoDB instance
+
+### Option A: Docker (production-style)
+
 ```bash
-git clone https://github.com/muhammadsudaiskhalid/NoteSync.git
-cd NoteSync
+cp .env.example .env         # set a real JWT_SECRET
+docker compose up --build
 ```
 
-### 2. Backend Setup
+Open <http://localhost:3000>. MongoDB runs internally (not exposed to the host); data persists in a named volume. See [DEPLOYMENT.md](DEPLOYMENT.md) for details.
+
+### Option B: Local development
+
 ```bash
+# Backend
 cd backend
 npm install
+cp .env.example .env         # set MONGODB_URI, JWT_SECRET; GEMINI_API_KEY optional
+npm run dev                  # http://localhost:5000
 
-# Create .env file
-cp .env.example .env
-```
-
-**Configure `.env`:**
-```env
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-GEMINI_API_KEY=your_gemini_api_key
-JWT_SECRET=your_jwt_secret_key
-FRONTEND_URL=http://localhost:3000
-```
-
-**Get API Keys:**
-- MongoDB: https://www.mongodb.com/cloud/atlas
-- Gemini AI: https://makersuite.google.com/app/apikey
-
-### 3. Frontend Setup
-```bash
-cd ../frontend
-npm install
-```
-
-### 4. Run Application
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm start
-```
-
-**Terminal 2 - Frontend:**
-```bash
+# Frontend (second terminal)
 cd frontend
-npm start
+npm install
+npm start                    # http://localhost:3000, proxies /api to :5000
 ```
 
-Open `http://localhost:3000` in your browser!
+On Windows, `start-dev.bat` at the repo root launches Docker MongoDB + both dev servers in one go.
 
-## 📖 Usage Guide
+### Running tests
 
-### 1. Create Account
-- Sign up with email, name, university, and field of study
-- Secure authentication with encrypted passwords
-
-### 2. Record Lecture
-- Click "Record Lecture"
-- Enter title, subject, category, and tags
-- Select language (English/Urdu/Mixed)
-- Click "Start Recording" and speak
-- Click "Stop" when done
-
-### 3. Generate Smart Notes
-- Click "Summarize" to get AI-generated notes
-- Review key points, definitions, and exam topics
-- Click "Save Lecture"
-
-### 4. Access Your Notes
-- View all lectures in "Lecture History"
-- Filter by category, tags, or search
-- Expand to see full transcript
-- Copy or download notes
-
-## 🎯 Perfect For
-
-- 🎓 University students in Pakistan
-- 📚 Students with mixed-language lectures (Urdu-English)
-- 🧠 Anyone who wants to focus on learning instead of note-taking
-- 📝 Students preparing for exams
-
-## 🌟 Key Highlights
-
-| Feature | Description |
-|---------|-------------|
-| 💯 Free | Completely free to use with free-tier APIs |
-| 🌐 Multilingual | Supports English, Urdu, and code-mixing |
-| 🤖 AI-Powered | Smart summarization with Google Gemini |
-| 🔒 Secure | JWT authentication & encrypted passwords |
-| 📱 Responsive | Works on desktop and mobile |
-| ⚡ Real-time | Live transcription as you speak |
-
-## 🛠️ Project Structure
+```bash
+cd backend && npm test       # 66 tests: NLP pipeline units + API integration (in-memory MongoDB)
+cd frontend && npm test      # 15 tests: span highlighting, components, auth flow
 ```
+
+## API overview
+
+All lecture routes require `Authorization: Bearer <token>`.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/register`, `/api/auth/login` | Create account / log in (returns JWT) |
+| GET | `/api/auth/me` | Current user profile |
+| POST | `/api/summarize` | Run the NLP pipeline on a transcript → notes + annotation spans |
+| POST/GET | `/api/lectures` | Create / list lectures (filter by `category`, `tag`) |
+| GET/PUT/DELETE | `/api/lectures/:id` | Fetch / update / delete an owned lecture |
+| GET | `/api/lectures/stats/categories-tags` | Category and tag counts |
+| GET | `/api/health` | Health check |
+
+The `/api/summarize` response includes `annotations.entitySpans` and `annotations.keyTermSpans`: character offsets into the raw transcript that power the inline highlighting without any client-side re-tokenization.
+
+## Project structure
+
+```text
 NoteSync/
-├── backend/              # Node.js + Express API
-│   ├── config/          # Database configuration
-│   ├── models/          # MongoDB schemas
-│   ├── routes/          # API routes
-│   ├── controllers/     # Business logic
-│   ├── services/        # External services (Gemini AI)
-│   ├── middleware/      # Auth & error handling
-│   └── server.js        # Entry point
-│
-├── frontend/            # React application
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── services/    # API services
-│   │   ├── utils/       # Helper functions
-│   │   └── App.jsx      # Main component
-│   └── public/          # Static files
-│
-└── README.md
+├── backend/
+│   ├── app.js                 # Express app (side-effect free, testable)
+│   ├── server.js              # Entry point: DB connect + listen
+│   ├── services/nlp/          # The NLP pipeline (see table above)
+│   ├── controllers/ routes/ models/ middleware/ config/
+│   └── tests/                 # Jest: nlp/ units + api/ integration
+├── frontend/
+│   └── src/
+│       ├── pages/             # Landing, Login, Register, Dashboard, Record, LectureDetail
+│       ├── components/        # manuscript/ (annotated view), record/, dashboard/, layout/, common/
+│       ├── hooks/             # useSpeechRecognition (multilingual + auto-restart), data hooks
+│       ├── utils/spanHighlighter.js   # offset spans → non-overlapping render segments
+│       ├── context/ api/
+│       └── ...
+├── docker-compose.yml         # mongo + backend + frontend
+├── .github/workflows/ci-cd.yml
+├── DEPLOYMENT.md
+└── start-dev.bat              # Windows dev launcher
 ```
 
-## 🤝 Contributing
+## Environment variables
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `MONGODB_URI` | backend | MongoDB connection string |
+| `JWT_SECRET` | backend | Token signing secret (set a long random value) |
+| `GEMINI_API_KEY` | backend | *Optional*: enables the LLM polish pass; app is fully functional without it |
+| `FRONTEND_URL` | backend | Allowed CORS origin |
+| `PORT` | backend | API port (default 5000) |
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Never commit `.env`. Templates live in `.env.example` files.
 
-## 📝 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE.txt](LICENSE.txt).
 
-## 👨‍💻 Author
+## Author
 
-**Muhammad Sudais Khalid**
-- GitHub: [@muhammadsudaiskhalid](https://github.com/muhammadsudaiskhalid)
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for free API access
-- MongoDB Atlas for free database hosting
-- Web Speech API for browser-based transcription
-- All students who inspired this project
-
-
-## 📞 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Contact: msudaiskhalid.ai@gmail.com
-- Website: [Sudais Khalid](https://sudaiskhalid.com/)
-- LinkedIn: [Sudais Khalid - LinkedIn](https://www.linkedin.com/sudais-khalid)
-
----
-**Made with ❤️ for students in Pakistan**
-
-*Empowering students to learn smarter, not harder*
-
-**Happy Learning! 🎓**
+**Sudais Khalid**
+GitHub: [@sudais-khalid](https://github.com/sudais-khalid) · Email: <msudaiskhalid.ai@gmail.com>
