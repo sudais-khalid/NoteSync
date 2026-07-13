@@ -13,7 +13,7 @@ export default function LandingPage() {
         <div>
           <p className="label-mono mb-4">record → transcribe → annotate</p>
           <h1 className="font-display text-4xl font-semibold leading-tight md:text-5xl">
-            Your lecture, kept exactly as spoken —
+            Your lecture, kept exactly as spoken,
             <br /> and marked up like a scholar's notes.
           </h1>
           <p className="mt-5 max-w-md text-ink-muted">
